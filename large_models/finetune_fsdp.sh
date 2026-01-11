@@ -48,7 +48,9 @@ echo "SEED: $SEED"
 echo "MODE: $MODE"
 echo "Extra args: $EXTRA_ARGS $TASK_ARGS"
 
-OMP_NUM_THREADS=10 torchrun --nproc_per_node=$NUM_GPU --master_port=$(( RANDOM + 1000 )) run.py \
+MASTER_PORT=${MASTER_PORT:-$(( RANDOM + 1000 ))}
+
+OMP_NUM_THREADS=10 torchrun --nproc_per_node=$NUM_GPU --master_port=$MASTER_PORT run.py \
     --model_name $MODEL \
     --task_name $TASK \
     --output_dir result/$TASK-${MODEL_NAME}-$TAG --tag $TAG --train_set_seed $SEED --num_train $TRAIN --num_dev $DEV --num_eval $EVAL --logging_steps 10 \

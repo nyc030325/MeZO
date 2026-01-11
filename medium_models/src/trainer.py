@@ -812,7 +812,11 @@ class Trainer(LinearHeadTrainer):
                         # self.save_model(self.args.output_dir)
 
                         # Now we save this to (CPU) memory instead of disk <-- much faster
-                        self.best_model_ckpt = {k: v.detach().cpu() for k, v in model.state_dict().items()}
+                        # If model is wrapped by DataParallel/DistributedDataParallel, unwrap to avoid `module.` prefix.
+                        state_dict_source = model.module if hasattr(model, "module") else model
+                        self.best_model_ckpt = {
+                            k: v.detach().cpu() for k, v in state_dict_source.state_dict().items()
+                        }
 
             if self.args.max_steps > 0 and self.state.global_step > self.args.max_steps or (self.args.max_zo_forward_steps > 0 and self.state.zo_forward_step > self.args.max_zo_forward_steps):
                 # train_iterator.close()

@@ -1026,21 +1026,23 @@ def main():
                 torch.save(model_args, os.path.join(training_args.output_dir, "model_args.bin"))
                 torch.save(data_args, os.path.join(training_args.output_dir, "data_args.bin"))
             
-            if training_args.evaluate_during_training:
-                # Reload the best checkpoint (for eval)
-                # model.load_state_dict(trainer.best_model_ckpt)
-                # if training_args.prefix_tuning:
-                #     # We can load prefix by directly using load_state_dict
-                #     model.load_state_dict(torch.load(os.path.join(training_args.output_dir, "pytorch_model.bin")))
-                # else:
-                #     model = model_fn.from_pretrained(training_args.output_dir)
-                # if training_args.exclude_first_layers != -1:
-                #     model = convert_opt_model(model, config, training_args.exclude_first_layers)
-                
-                # model = model.to(training_args.device)
-                
-                # Now we just reload this from memory instead of disk <-- much faster
-                trainer.model.load_state_dict(trainer.best_model_ckpt)
+                if hasattr(trainer, "best_model_ckpt") and trainer.best_model_ckpt is not None:
+                    best_state_dict = trainer.best_model_ckpt
+                    if (
+                        isinstance(best_state_dict, dict)
+                        and len(best_state_dict) > 0
+                        and next(iter(best_state_dict.keys())).startswith("module.")
+                    ):
+                        best_state_dict = {
+                            k[len("module.") :]: v for k, v in best_state_dict.items()
+                        }
+                    incompatible = trainer.model.load_state_dict(best_state_dict, strict=False)
+                    if getattr(incompatible, "missing_keys", None) or getattr(incompatible, "unexpected_keys", None):
+                        logger.info(
+                            "Loaded best_model_ckpt with strict=False (missing_keys=%d, unexpected_keys=%d)",
+                            len(getattr(incompatible, "missing_keys", []) or []),
+                            len(getattr(incompatible, "unexpected_keys", []) or []),
+                        )
 
     # Evaluation
     final_result = {
