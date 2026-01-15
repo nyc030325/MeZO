@@ -7,16 +7,9 @@
 ### Environment Setup
 
 ```bash
-export HTTP_PROXY=http://sys-proxy-rd-relay.byted.org:8118
-export http_proxy=http://sys-proxy-rd-relay.byted.org:8118
-export https_proxy=http://sys-proxy-rd-relay.byted.org:8118
-export no_proxy="localhost,.byted.org,byted.org,.bytedance.net,bytedance.net,.byteintl.net,.tiktok-row.net,.tiktok-row.org,127.0.0.1,127.0.0.0/8,169.254.0.0/16,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8,::1,fe80::/10,fd00::/8"
-
 # Clone repository
-git clone https://github.com/nyc030325/llama.git
-cd llama
-git checkout nyc
-cd medium_models
+git clone https://github.com/nyc030325/MeZO.git
+cd MeZO
 
 # Install Miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -48,9 +41,16 @@ python tools/generate_k_shot_data.py --k 16 --task SST-2 --seed 13 21 42 87 100 
 python tools/generate_k_shot_data.py --k 512 --task SST-2 --seed 13 21 42 87 100 --mode k-shot-1k-test --data_dir data/original --output_dir data
 ```
 
-### MeZO Fine-tuning
+### GPU Monitoring (Optional)
 
 ```bash
+nvidia-smi --query-gpu=timestamp,memory.used --format=csv,noheader -l 1 > gpu_mem.log
+```
+
+### Medium Models - MeZO
+```bash
+cd medium_models
+
 # Run MeZO fine-tuning for K=16 and K=512
 for K in 16 512; do for SEED in 13 21 42 87 100; do TASK=SST-2 K=$K SEED=$SEED BS=8 LR=1e-6 EPS=1e-3 STEP=100 EVAL_STEP=100 MODEL=roberta-large bash mezo.sh; done; done
 
@@ -59,9 +59,11 @@ python tools/gather_result.py --condition "{'tag': 'k16-roberta-large-mezo-ft', 
 python tools/gather_result.py --condition "{'tag': 'k512-roberta-large-mezo-ft', 'task_name': 'sst-2'}"
 ```
 
-### Adam Fine-tuning (Baseline)
+### Medium Models - Adam
 
 ```bash
+cd medium_models
+
 # Run Adam fine-tuning for K=16 and K=512
 for K in 16 512; do for SEED in 13 21 42 87 100; do TASK=SST-2 K=$K SEED=$SEED BS=8 LR=1e-5 STEP=100 EVAL_STEP=100 MODEL=roberta-large EXTRA_TAG=adam-step100-bs8-lr1e-5 bash finetune.sh; done; done
 
@@ -70,16 +72,9 @@ python tools/gather_result.py --condition "{'tag': 'k16-roberta-large-adam-step1
 python tools/gather_result.py --condition "{'tag': 'k512-roberta-large-adam-step100-bs8-lr1e-5', 'task_name': 'sst-2'}"
 ```
 
-### GPU Monitoring
+### Large Models (OPT-13B) - Experiments
 
 ```bash
-nvidia-smi --query-gpu=timestamp,memory.used --format=csv,noheader -l 1 > /opt/tiger/TRAIL/MeZO/medium_models/gpu_mem.log
-```
-
-### Large Model Experiments (OPT-13B)
-
-```bash
-cd ..
 cd large_models
 
 # Install additional dependencies
