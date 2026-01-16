@@ -22,8 +22,8 @@ conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/ma
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 # Create and activate environment
-conda create -n llama python=3.10 -y
-conda activate llama
+conda create -n Mezo python=3.10 -y
+conda activate Mezo
 
 # Install dependencies
 pip install -U transformers==4.28.1 datasets scikit-learn filelock tqdm numpy torch loralib
@@ -32,6 +32,7 @@ pip install -U transformers==4.28.1 datasets scikit-learn filelock tqdm numpy to
 ### Data Preparation
 
 ```bash
+cd medium_models
 cd data
 bash download_dataset.sh
 cd ..
@@ -49,8 +50,6 @@ nvidia-smi --query-gpu=timestamp,memory.used --format=csv,noheader -l 1 > gpu_me
 
 ### Medium Models - MeZO
 ```bash
-cd medium_models
-
 # Run MeZO fine-tuning for K=16 and K=512
 for K in 16 512; do for SEED in 13 21 42 87 100; do TASK=SST-2 K=$K SEED=$SEED BS=8 LR=1e-6 EPS=1e-3 STEP=100 EVAL_STEP=100 MODEL=roberta-large bash mezo.sh; done; done
 
@@ -62,8 +61,6 @@ python tools/gather_result.py --condition "{'tag': 'k512-roberta-large-mezo-ft',
 ### Medium Models - Adam
 
 ```bash
-cd medium_models
-
 # Run Adam fine-tuning for K=16 and K=512
 for K in 16 512; do for SEED in 13 21 42 87 100; do TASK=SST-2 K=$K SEED=$SEED BS=8 LR=1e-5 STEP=100 EVAL_STEP=100 MODEL=roberta-large EXTRA_TAG=adam-step100-bs8-lr1e-5 bash finetune.sh; done; done
 
@@ -75,6 +72,7 @@ python tools/gather_result.py --condition "{'tag': 'k512-roberta-large-adam-step
 ### Large Models (OPT-13B) - Experiments
 
 ```bash
+cd ..
 cd large_models
 
 # Install additional dependencies
